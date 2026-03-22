@@ -2,22 +2,25 @@
 import { motion } from 'framer-motion';
 
 // 定义通用的动画变体
-const fadeInUp = {
+// 1. 修改后的 fadeInUp 定义
+const fadeInUp: any = { // 这里加个 : any，告诉 TypeScript “别管这个数组的死活”
   hidden: { opacity: 0, y: 30 },
   visible: { 
     opacity: 1, 
     y: 0, 
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } // 使用自定义缓动函数，更优雅
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } 
   }
 };
 
-const staggerContainer = {
+// 2. 顺便把 staggerContainer 也改一下，确保万无一失
+const staggerContainer: any = {
   visible: {
     transition: {
-      staggerChildren: 0.1 // 子元素依次入场
+      staggerChildren: 0.1 
     }
   }
 };
+
 
 export default function PersonalWebsiteHomepage() {
   const articles = [
