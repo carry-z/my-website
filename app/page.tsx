@@ -72,6 +72,18 @@ function PlatformIcon({ platform }: { platform: string }) {
 
 
 export default function PersonalWebsiteHomepage() {
+  const researchItems = [
+    {
+      title: "JACS 论文",
+      description: "点击查看论文原文。",
+      imageUrl: "/images/photography/paper.PNG",
+      alt: "科研论文截图",
+      width: 1744,
+      height: 1156,
+      href: "https://pubs.acs.org/doi/10.1021/jacs.5c17758",
+    },
+  ];
+
   const photographyGroups = [
     {
       title: "建筑",
@@ -85,15 +97,15 @@ export default function PersonalWebsiteHomepage() {
         { url: "/images/photography/architecture/sports_field_autumn.jpg", alt: "秋日操场", width: 6000, height: 4000 },
         { url: "/images/photography/architecture/yuelu_academy_entrance.jpg", alt: "岳麓书院入口", width: 5578, height: 3719 },
         { url: "/images/photography/architecture/zibei_pavilion.jpg", alt: "自卑亭", width: 6000, height: 4000 },
+        { url: "/images/photography/nature/cherry_blossoms_modern_building.jpg", alt: "樱花与现代建筑", width: 5328, height: 4000 },
+        { url: "/images/photography/nature/traditional_buildings_forest.jpg", alt: "林中的传统建筑", width: 2731, height: 4096 },
       ],
     },
     {
       title: "自然",
       photos: [
-        { url: "/images/photography/nature/cherry_blossoms_modern_building.jpg", alt: "樱花与现代建筑", width: 5328, height: 4000 },
         { url: "/images/photography/nature/pink_blossoms_building.jpg", alt: "粉色花朵与建筑", width: 5328, height: 4000 },
         { url: "/images/photography/nature/plum_blossoms_closeup.jpg", alt: "梅花特写", width: 8640, height: 5760 },
-        { url: "/images/photography/nature/traditional_buildings_forest.jpg", alt: "林中的传统建筑", width: 2731, height: 4096 },
         { url: "/images/photography/nature/yellow_flowers_wall.jpg", alt: "黄色花朵与墙面", width: 5328, height: 4000 },
       ],
     },
@@ -115,7 +127,7 @@ export default function PersonalWebsiteHomepage() {
             Carry
           </a>
           <nav className="hidden gap-9 text-sm font-medium md:flex text-neutral-700">
-            {['关于我', '文章', '摄影', '联系方式'].map((item, index) => (
+            {['关于我', '科研', '摄影', '联系方式'].map((item, index) => (
               <a key={index} href={`#${['about', 'writing', 'photography', 'contact'][index]}`} className="relative group py-1">
                 {item}
                 {/* 优化：添加优雅的 hover 下划线动画 */}
@@ -147,7 +159,7 @@ export default function PersonalWebsiteHomepage() {
             </p>
             <div className="mt-12 flex flex-wrap gap-5">
               <a href="#writing" className="group rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-neutral-800 hover:shadow-lg hover:shadow-neutral-900/10">
-                查看文章 <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+                查看科研 <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
               </a>
               <a href="#about" className="rounded-full border border-neutral-200 px-8 py-3.5 text-sm font-semibold transition hover:bg-neutral-100 hover:border-neutral-300">
                 了解我
@@ -212,6 +224,54 @@ export default function PersonalWebsiteHomepage() {
           </motion.div>
         </section>
 
+        <section id="writing" className="bg-neutral-50 border-y border-neutral-100">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={staggerContainer}
+            className="mx-auto max-w-7xl px-6 py-28 md:px-10"
+          >
+            <motion.div variants={fadeInUp} className="mb-16 max-w-3xl">
+              <p className="text-sm uppercase tracking-[0.25em] font-medium text-neutral-500">Research</p>
+              <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">科研</h2>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-neutral-600">
+                收录近期科研成果与代表性论文，点击卡片可直接查看原文。
+              </p>
+            </motion.div>
+
+            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+              {researchItems.map((item) => (
+                <motion.a
+                  key={item.href}
+                  variants={fadeInUp}
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-lg shadow-neutral-900/5 transition-transform hover:-translate-y-1"
+                >
+                  <div className="overflow-hidden">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.alt}
+                      width={item.width}
+                      height={item.height}
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                      className="h-auto w-full transition-transform duration-700 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <p className="text-sm font-medium uppercase tracking-[0.2em] text-neutral-500">Paper</p>
+                    <h3 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">{item.title}</h3>
+                    <p className="mt-3 text-base leading-relaxed text-neutral-600">{item.description}</p>
+                  </div>
+                </motion.a>
+              ))}
+            </div>
+          </motion.div>
+        </section>
+
         <section id="photography" className="bg-neutral-50">
           <motion.div
             initial="hidden"
@@ -245,6 +305,7 @@ export default function PersonalWebsiteHomepage() {
                           alt={photo.alt}
                           width={photo.width}
                           height={photo.height}
+                          unoptimized
                           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                           className="h-auto w-full transition-transform duration-700 group-hover:scale-[1.02]"
                         />
