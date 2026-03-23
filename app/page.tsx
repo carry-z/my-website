@@ -22,12 +22,88 @@ const staggerContainer: Variants = {
   }
 };
 
+function PlatformIcon({ platform }: { platform: string }) {
+  const commonProps = {
+    className: "h-5 w-5",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    xmlns: "http://www.w3.org/2000/svg",
+    "aria-hidden": true,
+  };
+
+  switch (platform) {
+    case "xiaohongshu":
+      return (
+        <svg {...commonProps}>
+          <rect x="3" y="5" width="18" height="14" rx="4" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M7 9.5H11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M7 13H10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M13.5 10L17 13.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M17 10L13.5 13.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    case "douyin":
+      return (
+        <svg {...commonProps}>
+          <path d="M14 4v9.2a3.8 3.8 0 1 1-2.8-3.66" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M14 6.2c.8 1.9 2.3 3.3 4.2 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    case "weibo":
+      return (
+        <svg {...commonProps}>
+          <path d="M9.1 17.5c-2.6 0-4.7-1.5-4.7-3.5 0-2.2 2.5-4.1 5.6-4.1 2.7 0 4.3 1.2 4.3 2.9 0 2.6-2.5 4.7-5.2 4.7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+          <path d="M15.5 8.2c1.6.2 3 1.5 3.2 3.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M14.8 5.4c2.6.3 4.7 2.4 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <circle cx="9.4" cy="13.7" r="0.9" fill="currentColor" />
+        </svg>
+      );
+    case "email":
+      return (
+        <svg {...commonProps}>
+          <rect x="3" y="6" width="18" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M5.5 8.5 12 13l6.5-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 
 export default function PersonalWebsiteHomepage() {
-  const photos = [
-    { url: "/images/photography/DSC08477.jpg", title: "城市夜色", description: "在光影和秩序之间，捕捉城市最安静的一面。" },
-    { url: "/images/photography/P1179397.jpg", title: "路途切片", description: "把经过的风景留下，也把当时的心绪保存下来。" },
-    { url: "/images/photography/P1179425.jpg", title: "日常取景", description: "从看似普通的瞬间里，找到值得停留的构图。" },
+  const photographyGroups = [
+    {
+      title: "建筑",
+      photos: [
+        { url: "/images/photography/architecture/aiwan_pavilion_winter.jpg", alt: "冬日的爱晚亭", width: 5328, height: 4000 },
+        { url: "/images/photography/architecture/dacheng_hall.jpg", alt: "大成殿建筑", width: 5328, height: 4000 },
+        { url: "/images/photography/architecture/hunan_university_courtyard.jpg", alt: "湖南大学庭院", width: 8640, height: 5760 },
+        { url: "/images/photography/architecture/hunan_university_gate.jpg", alt: "湖南大学校门", width: 2732, height: 4096 },
+        { url: "/images/photography/architecture/red_brick_building.jpg", alt: "红砖建筑", width: 4000, height: 6000 },
+        { url: "/images/photography/architecture/seek_truth_building.jpg", alt: "求是楼", width: 5328, height: 4000 },
+        { url: "/images/photography/architecture/sports_field_autumn.jpg", alt: "秋日操场", width: 6000, height: 4000 },
+        { url: "/images/photography/architecture/yuelu_academy_entrance.jpg", alt: "岳麓书院入口", width: 5578, height: 3719 },
+        { url: "/images/photography/architecture/zibei_pavilion.jpg", alt: "自卑亭", width: 6000, height: 4000 },
+      ],
+    },
+    {
+      title: "自然",
+      photos: [
+        { url: "/images/photography/nature/cherry_blossoms_modern_building.jpg", alt: "樱花与现代建筑", width: 5328, height: 4000 },
+        { url: "/images/photography/nature/pink_blossoms_building.jpg", alt: "粉色花朵与建筑", width: 5328, height: 4000 },
+        { url: "/images/photography/nature/plum_blossoms_closeup.jpg", alt: "梅花特写", width: 8640, height: 5760 },
+        { url: "/images/photography/nature/traditional_buildings_forest.jpg", alt: "林中的传统建筑", width: 2731, height: 4096 },
+        { url: "/images/photography/nature/yellow_flowers_wall.jpg", alt: "黄色花朵与墙面", width: 5328, height: 4000 },
+      ],
+    },
+  ];
+
+  const contactMethods = [
+    { platform: "xiaohongshu", label: "小红书", value: "麓山南路88号" },
+    { platform: "douyin", label: "抖音", value: "carry" },
+    { platform: "weibo", label: "微博", value: "风云日记_" },
+    { platform: "email", label: "邮箱", value: "fu_zeng99@163.com" },
   ];
 
   return (
@@ -84,7 +160,7 @@ export default function PersonalWebsiteHomepage() {
             <div className="aspect-[4/5] overflow-hidden rounded-[3rem] shadow-2xl shadow-neutral-500/10 bg-white p-4 md:aspect-[3/4]">
               <div className="relative h-full w-full rounded-[2rem] overflow-hidden">
                 <Image
-                  src="/images/gr.png"
+                  src="/images/laboratory_scene.png"
                   alt="Hero photograph"
                   fill
                   priority
@@ -144,34 +220,38 @@ export default function PersonalWebsiteHomepage() {
             variants={staggerContainer}
             className="mx-auto max-w-7xl px-6 py-28 md:px-10"
           >
-            <motion.div variants={fadeInUp} className="mb-16 max-w-3xl">
+            <motion.div variants={fadeInUp} className="mb-20 max-w-3xl">
               <p className="text-sm uppercase tracking-[0.25em] font-medium text-neutral-500">Photography</p>
               <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">摄影作品</h2>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-neutral-600">
-                这些照片来自我日常的观察与记录。它们不只是画面，也是一段时间里我看待世界的方式。
+                按两组主题整理呈现，保留画面本身的节奏与留白。
               </p>
             </motion.div>
-            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-              {photos.map((photo) => (
-                <motion.figure
-                  key={photo.url}
-                  variants={fadeInUp}
-                  className="group overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-lg shadow-neutral-900/5"
-                >
-                  <div className="relative aspect-[4/5] overflow-hidden">
-                    <Image
-                      src={photo.url}
-                      alt={photo.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
+            <div className="space-y-20">
+              {photographyGroups.map((group) => (
+                <motion.section key={group.title} variants={fadeInUp}>
+                  <div className="mb-8 flex items-center gap-4">
+                    <h3 className="text-2xl font-semibold tracking-tight text-neutral-900">{group.title}</h3>
+                    <div className="h-px flex-1 bg-neutral-200" />
                   </div>
-                  <figcaption className="space-y-3 px-6 py-6">
-                    <h3 className="text-xl font-semibold tracking-tight text-neutral-900">{photo.title}</h3>
-                    <p className="text-sm leading-relaxed text-neutral-600">{photo.description}</p>
-                  </figcaption>
-                </motion.figure>
+                  <div className="columns-1 gap-6 md:columns-2 xl:columns-3">
+                    {group.photos.map((photo) => (
+                      <div
+                        key={photo.url}
+                        className="group mb-6 break-inside-avoid overflow-hidden rounded-[1.75rem] bg-white shadow-lg shadow-neutral-900/5 ring-1 ring-neutral-200/80"
+                      >
+                        <Image
+                          src={photo.url}
+                          alt={photo.alt}
+                          width={photo.width}
+                          height={photo.height}
+                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                          className="h-auto w-full transition-transform duration-700 group-hover:scale-[1.02]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </motion.section>
               ))}
             </div>
           </motion.div>
@@ -183,10 +263,34 @@ export default function PersonalWebsiteHomepage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.5 }}
-            variants={fadeInUp}
+            variants={staggerContainer}
             className="rounded-[3rem] bg-neutral-950 px-10 py-16 text-white md:px-20 md:py-24"
           >
-            {/* ... section content remains similar but with updated padding/radius ... */}
+            <motion.div variants={fadeInUp} className="max-w-3xl">
+              <p className="text-sm uppercase tracking-[0.25em] font-medium text-white/55">Contact</p>
+              <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">联系方式</h2>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65">
+                欢迎通过这些平台找到我。研究、摄影、写作和日常记录，都可以在不同的地方相遇。
+              </p>
+            </motion.div>
+
+            <div className="mt-12 grid gap-5 md:grid-cols-2">
+              {contactMethods.map((item) => (
+                <motion.div
+                  key={item.label}
+                  variants={fadeInUp}
+                  className="group flex items-center gap-4 rounded-[2rem] border border-white/10 bg-white/6 px-5 py-5 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white">
+                    <PlatformIcon platform={item.platform} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white/55">{item.label}</p>
+                    <p className="mt-1 truncate text-base font-semibold tracking-tight text-white">{item.value}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         </section>
       </main>
