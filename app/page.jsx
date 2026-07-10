@@ -8,17 +8,17 @@ const navItems = [
 const aboutCards = [
   {
     title: "身份",
-    text: "材料科学、科研表达与个人创作的学习者。",
+    text: "材料科学研究者，也持续练习清晰、准确而有温度的表达。",
     meta: "Materials",
   },
   {
     title: "兴趣",
-    text: "研究、写作、摄影、设计。在实验之外，用文字和影像保存真实的感受。",
+    text: "研究、写作与摄影。在实验之外，用文字和影像保存真实的感受。",
     meta: "Writing & Images",
   },
   {
     title: "方向",
-    text: "构建一个将科研的理性、表达的温度与审美的秩序融合的长期作品集。",
+    text: "让科研的理性、表达的温度与视觉的秩序，在长期创作中彼此照亮。",
     meta: "Portfolio",
   },
 ];
@@ -148,11 +148,11 @@ export default function Home() {
           <div className="hero-copy reveal">
             <p className="eyebrow">Personal Website</p>
             <h1>
-              <span>以探针触及光电前沿，</span>
-              <span>用镜头记录共和国故事。</span>
+              <span>以探针探索光电前沿，</span>
+              <span>用镜头记录时代故事。</span>
             </h1>
             <p className="lead">
-              你好，我是 Carry。这里是我的个人网站，用来展示我的研究兴趣、文字记录、摄影作品，以及与世界建立联系的方式。
+              你好，我是 Carry。这里收录我的科研探索、文字思考与摄影作品，也记录我理解世界的方式。
             </p>
             <div className="hero-actions">
               <a className="primary-button" href="#research">
@@ -183,7 +183,7 @@ export default function Home() {
         <section className="about" id="about">
           <div className="section-heading centered reveal">
             <p className="eyebrow">About Me</p>
-            <h2>科研与表达的交汇点</h2>
+            <h2>在科研与表达之间</h2>
           </div>
           <div className="about-grid">
             {aboutCards.map((card, index) => (
@@ -201,7 +201,7 @@ export default function Home() {
           <div className="section-heading reveal">
             <p className="eyebrow">Research</p>
             <h2>科研</h2>
-            <p>收录近期科研成果与代表性论文，点击卡片可直接查看原文。</p>
+            <p>关注材料科学与光电领域，收录近期成果与代表性论文。</p>
           </div>
           <a
             className="paper-card reveal"
@@ -214,9 +214,9 @@ export default function Home() {
             </div>
             <div>
               <p className="eyebrow">Paper</p>
-              <h3>JACS 论文</h3>
-              <p>代表性科研成果，点击查看论文原文。</p>
-              <span className="text-link">Open article →</span>
+              <h3>JACS 代表性论文</h3>
+              <p>点击进入期刊页面，查看论文摘要与完整内容。</p>
+              <span className="text-link">查看论文 →</span>
             </div>
           </a>
         </section>
@@ -225,7 +225,7 @@ export default function Home() {
           <div className="section-heading reveal">
             <p className="eyebrow">Photography</p>
             <h2>摄影作品</h2>
-            <p>按两组主题整理呈现，保留画面本身的节奏与留白。</p>
+            <p>行走于校园与山水之间，用影像保存建筑、季节和光线。</p>
           </div>
           <PhotoGrid title="建筑" photos={architecturePhotos} />
           <PhotoGrid title="自然" photos={naturePhotos} />
@@ -236,7 +236,7 @@ export default function Home() {
             <div className="section-heading reveal">
               <p className="eyebrow">Contact</p>
               <h2>联系方式</h2>
-              <p>欢迎通过这些平台找到我。研究、摄影、写作和日常记录，都可以在不同的地方相遇。</p>
+              <p>欢迎与我交流科研、摄影与写作，也欢迎分享新的想法。</p>
             </div>
             <div className="contact-grid">
               {contacts.map(([label, value, type]) => (
