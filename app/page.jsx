@@ -1,7 +1,7 @@
 const navItems = [
   ["关于我", "#about"],
   ["科研", "#research"],
-  ["实验记录", "/lab"],
+  ["管理员登录", "/lab"],
   ["摄影", "#photography"],
   ["联系方式", "#contact"],
 ];

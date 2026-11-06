@@ -7,6 +7,7 @@
   <meta name="description" content="面向有机半导体共混掺杂的个人实验记录工作台。快速记录配方、比较电导率与热电性能、导出数据。">
   <title>Dopant Lab — 我的掺杂实验室</title>
   <link rel="stylesheet" href="/lab-assets/styles.css">
+<script src="/lab-assets/admin-session.js" defer></script>
 </head>
 <body>
   <aside class="sidebar">
@@ -22,7 +23,7 @@
     <div class="sidebar-bottom"><div class="storage-note"><span class="status-dot"></span>保存在此浏览器<small>导出备份，让实验记录随你走。</small></div><button class="backup-link" id="helpBtn"><i data-icon="database"></i>数据与备份<i data-icon="arrow-up-right"></i></button><div class="profile"><span class="avatar">我</span><div>个人工作台<small>为下一次发现留好记录</small></div></div></div>
   </aside>
   <div class="main-wrap">
-    <header class="topbar"><div><span class="breadcrumb">我的研究空间</span><span class="slash">/</span><span id="breadcrumb">实验记录</span></div><div class="action-row"><span class="local-badge"><span class="status-dot"></span>本地保存</span><button id="backupTopBtn" class="text-button" aria-label="打开数据与备份"><i data-icon="database"></i>备份</button></div></header>
+    <header class="topbar"><div><span class="breadcrumb">我的研究空间</span><span class="slash">/</span><span id="breadcrumb">实验记录</span></div><div class="action-row"><span class="local-badge"><span class="status-dot"></span>本地保存</span><button id="backupTopBtn" class="text-button" aria-label="打开数据与备份"><i data-icon="database"></i>备份</button><form action="/api/lab-auth/logout" method="post"><button class="admin-logout" type="submit">退出管理</button></form></div></header>
     <main>
       <section class="page-heading"><div><div class="eyebrow">RESEARCH, WITH A LITTLE MORE CLARITY.</div><h1 id="pageTitle">每一次掺杂，都有迹可循<span>。</span></h1><p id="pageIntro">从配方到性能，把实验串成可以回看的线索。</p></div><div class="entry-actions"><button class="button" id="batchBtn"><i data-icon="layers"></i>批量记录</button><button class="button primary" id="newBtn"><i data-icon="plus"></i>记录新实验</button></div></section>
       <div class="sourcebar"><div class="segmented" aria-label="数据来源"><button id="demoBtn">示例演示</button><button id="mineBtn">我的实验 <span id="ownCount">0</span></button></div><p id="sourceHint">示例数据仅演示功能，不代表真实实验结果或推荐配方。</p></div>
