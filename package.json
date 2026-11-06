@@ -4,14 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/initialize-lab-auth.mjs && next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "16.2.7",
+    "@vercel/blob": "2.8.2",
+    "next": "16.4.5",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   },
-  "devDependencies": {}
+  "overrides": {
+    "@vercel/cli-config": "0.3.7"
+  }
 }

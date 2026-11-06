@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { COOKIE_NAME, clearLoginLimit, cookieOptions, createSession, getAuthConfig, isSameOrigin, loginLimit, preventCache, readLoginForm, safeReturnTo, verifyCredentials } from "../../../../lib/lab-auth.server.mjs";
+import { COOKIE_NAME, clearLoginLimit, cookieOptions, createSession, isSameOrigin, loginLimit, preventCache, readLoginForm, safeReturnTo, verifyCredentials } from "../../../../lib/lab-auth.server.mjs";
+import { loadAuthConfig } from "../../../../lib/lab-credential-store.server.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +12,8 @@ function loginError(request, error, next = "/lab", status = 303) {
 }
 export async function POST(request) {
   if (!isSameOrigin(request)) return preventCache(new NextResponse("Invalid request origin", { status: 403 }));
-  const config = getAuthConfig();
+  let config;
+  try { config = await loadAuthConfig(); } catch { return loginError(request, "unavailable"); }
   if (!config) return loginError(request, "unavailable");
   const ip = request.headers.get("x-vercel-forwarded-for") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const limit = loginLimit(ip);

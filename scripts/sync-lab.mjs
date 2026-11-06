@@ -15,7 +15,7 @@ for (let [name, content] of files) {
       .replace('<link rel="stylesheet" href="styles.css">', '<link rel="stylesheet" href="/lab-assets/styles.css">')
       .replace('src="app.js"', 'src="/lab-assets/app.js"')
       .replace('</head>', '<script src="/lab-assets/admin-session.js" defer></script>\n</head>')
-      .replace('</button></div></header>', '</button><form action="/api/lab-auth/logout" method="post"><button class="admin-logout" type="submit">退出管理</button></form></div></header>')
+      .replace('</button></div></header>', '</button><a class="admin-logout" href="/admin/password">修改密码</a><form action="/api/lab-auth/logout" method="post"><button class="admin-logout" type="submit">退出管理</button></form></div></header>')
       .replace('<meta name="theme-color"', '<meta name="robots" content="noindex, nofollow">\n  <meta name="theme-color"')
       .replace('<aside class="sidebar">', '<aside class="sidebar">\n    <a class="return-home" href="/">← 返回 Carry 主页</a>');
   }

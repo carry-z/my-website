@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { COOKIE_NAME, getAuthConfig, safeReturnTo, verifySession } from "../../../lib/lab-auth.server.mjs";
+import { COOKIE_NAME, safeReturnTo, verifySession } from "../../../lib/lab-auth.server.mjs";
+import { loadAuthConfig } from "../../../lib/lab-credential-store.server.mjs";
 import styles from "./login.module.css";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,8 @@ const errors = { invalid: "账号或密码不正确，请重新输入。", limit
 export default async function AdminLogin({ searchParams }) {
   const params = await searchParams;
   const next = safeReturnTo(params.next);
-  const config = getAuthConfig();
+  let config = null;
+  try { config = await loadAuthConfig(); } catch { /* Fail closed; do not expose storage errors or credentials. */ }
   const error = typeof params.error === "string" && Object.hasOwn(errors, params.error) ? errors[params.error] : null;
   const store = await cookies();
   if (verifySession(store.get(COOKIE_NAME)?.value, config)) redirect(next);
@@ -23,6 +25,7 @@ export default async function AdminLogin({ searchParams }) {
         <h1 id="login-title">管理员登录</h1>
         <p className={styles.intro}>登录后，继续你的实验记录。</p>
         <div className={styles.notice}><span aria-hidden="true">◈</span> 实验工作台仅向管理员开放</div>
+        {params.changed === "1" && <p className={styles.success} role="status">密码已更新，请使用新密码重新登录。其他设备的旧登录也已失效。</p>}
         <form action="/api/lab-auth/login" method="post" className={styles.form}>
           <input type="hidden" name="next" value={next} />
           <label htmlFor="admin-username">管理员账号</label>
