@@ -1,5 +1,6 @@
 import {BASES,NUMBERS,FIELDS,pf,validate,groupKey,format,csv,DEMO} from './model.mjs';
 import {MAX_BATCH_ROWS,ROW_FIELDS,generateRows,parsePaste,allocateCodes,prepareBatch} from './batch.mjs';
+import {CloudNotebook} from './cloud.mjs';
 const $=s=>document.querySelector(s);
 const paths={notebook:'M5 3h14v18H5z M8 3v18 M11 8h5 M11 12h5 M11 16h3',chart:'M4 3v17h17 M8 15l4-5 4 2 5-7',layers:'M3 7l9-5 9 5-9 5z M3 12l9 5 9-5 M3 17l9 5 9-5',database:'M20 6c0 2-4 4-8 4s-8-2-8-4 4-4 8-4 8 2 8 4z M4 6v12c0 2 4 4 8 4s8-2 8-4V6 M4 12c0 2 4 4 8 4s8-2 8-4',plus:'M12 5v14 M5 12h14',x:'M6 6l12 12 M18 6L6 18',search:'M20 20l-5-5 M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0',download:'M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5',upload:'M12 16V3 M7 8l5-5 5 5 M4 16v5h16v-5',copy:'M8 8h13v13H8z M16 8V3H3v13h5',paperclip:'M8 12l7-7a4 4 0 0 1 6 6L10 22a6 6 0 0 1-8-8L13 3 M6 15l8-8',chevron:'M6 9l6 6 6-6','arrow-right':'M4 12h16 M14 6l6 6-6 6','arrow-up-right':'M6 18L18 6 M6 6h12v12',flask:'M9 2h6 M10 2v7L4 20q0 2 2 2h12q2 0 2-2l-6-11V2 M7 15h10',check:'M5 12l4 4L19 6',info:'M12 11v6 M12 7h.01 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',edit:'M15 3l6 6 M3 21l2-7L17 2l5 5-12 12z',clock:'M12 6v6l4 2 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',zap:'M13 2L3 14h8l-1 8 11-13H13z'};
 const icon=name=>`<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]||paths.notebook}"/></svg>`;
@@ -7,6 +8,8 @@ function icons(root=document){root.querySelectorAll('[data-icon]').forEach(el=>e
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let db,own=[],mode='demo',page='records',search='',hostFilter='',dopantFilter='',statusFilter='',batchFilter='',selected=new Set(),editing=null,currentDetail=null,keptFiles=[],chartGroup='',chartMetric='conductivity';
 let batchRows=[],batchUndo=null,batchDraftId='';
+let localLegacy=[],cloudBlocked=false,draftRecordId='',draftRevision=0,batchRevision=0;
+const cloud=new CloudNotebook(text=>{const element=document.getElementById('cloudStatus');if(element)element.textContent=text;});
 const content=$('#content');let toastTimer;
 function toast(text){$('#toast').textContent=text;$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),4200);}
 function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
@@ -20,6 +23,16 @@ function filtered(){const q=search.toLocaleLowerCase();return current().filter(r
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open('dopant-lab-v1',1);req.onupgradeneeded=()=>req.result.createObjectStore('experiments',{keyPath:'id'});req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);req.onblocked=()=>reject(Error('请关闭另一个标签页后重试。'));});}
 function loadRecords(){return new Promise((resolve,reject)=>{const req=db.transaction('experiments').objectStore('experiments').getAll();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
 function putMany(records){return new Promise((resolve,reject)=>{const tx=db.transaction('experiments','readwrite');for(const r of records)tx.objectStore('experiments').put(r);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('保存未完成'));});}
+async function persistRecords(records, revision=cloud.revision){
+  if(cloudBlocked)throw Error('云端尚未连通，请保留当前表单并刷新云端后重试。');
+  if(cloud.enabled){own=await cloud.save(records,revision);return;}
+  if(!db)throw Error('本地存储不可用。');await putMany(records);own=await loadRecords();localLegacy=own;
+}
+function renderMigration(){
+  const node=document.getElementById('cloudMigration');if(!node)return;
+  node.hidden=!cloud.enabled||!localLegacy.length;
+  const count=document.getElementById('legacyCount');if(count)count.textContent=localLegacy.length;
+}
 function download(data,type,name){const url=URL.createObjectURL(new Blob([data],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
 function options(values,selectedValue,label){return `<option value="">${label}</option>`+[...new Set(values)].sort().map(v=>`<option value="${esc(v)}" ${v===selectedValue?'selected':''}>${esc(v)}</option>`).join('');}
 function stat(label,value,unit,foot,ico,accent=false){return `<div class="stat ${accent?'stat-accent':''}"><div class="stat-top">${label}${icon(ico)}</div><div class="stat-value">${value}<small>${unit}</small></div><div class="stat-foot">${foot}</div></div>`;}
@@ -32,7 +45,8 @@ function render(){
   $('#breadcrumb').textContent=names[page];$('#pageTitle').innerHTML=titles[page]+'<span>。</span>';$('#pageIntro').textContent=intros[page];
   document.querySelectorAll('[data-page]').forEach(a=>a.classList.toggle('active',a.dataset.page===page));
   $('#demoBtn').classList.toggle('active',mode==='demo');$('#mineBtn').classList.toggle('active',mode==='mine');$('#ownCount').textContent=own.length;$('#navCount').textContent=current().length;
-  $('#sourceHint').textContent=mode==='demo'?'虚构示例 · 仅演示功能，不代表真实实验结果或推荐配方。':'我的实验 · 记录仅保存在当前浏览器，建议定期导出完整备份。';
+  $('#sourceHint').textContent=mode==='demo'?'虚构示例 · 仅演示功能，不代表真实实验结果或推荐配方。':cloud.enabled?'我的实验 · 阿里云私有保存，其他设备登录同一账号即可读取。':cloudBlocked?'云端连接异常 · 仅显示本地旧记录，未开启新的保存。':'我的实验 · 记录仅保存在当前浏览器，云端尚未配置。';
+  renderMigration();
   selected=new Set([...selected].filter(id=>!!byId(id)));
   if(page==='records')renderRecords();else if(page==='analysis')renderAnalysis();else renderMaterials();
   icons();
@@ -101,7 +115,10 @@ function renderMaterials(){
 }
 function setSource(next){mode=next;search='';hostFilter='';dopantFilter='';statusFilter='';batchFilter='';selected.clear();chartGroup='';render();}
 function openForm(record=null,copy=false){
-  if(!db){toast('本地数据库不可用，暂时不能保存。');return;}
+  if(cloudBlocked){toast('请先刷新云端；当前不会把未连接的保存误报为云端成功。');return;}
+  draftRecordId=record&&!copy?record.id:crypto.randomUUID();
+  draftRevision=cloud.revision;
+  if(!db&&!cloud.enabled){toast('本地数据库不可用，暂时不能保存。');return;}
   editing=record&&!copy?record:null;keptFiles=record&&!copy?[...(record.files||[])]:[];const form=$('#recordForm');form.reset();$('#formError').textContent='';
   for(const key of [...FIELDS,...NUMBERS,'basis'])if(form.elements.namedItem(key)){const el=form.elements.namedItem(key);el.value=record?.[key]??(key==='date'?today():key==='basis'?'mol%':key==='status'?'待测试':'');}
   if(!record)form.elements.reference.value='';
@@ -113,10 +130,10 @@ function openForm(record=null,copy=false){
 function renderFiles(){$('#fileList').innerHTML=keptFiles.map((f,i)=>`<div>${esc(f.name)}<button type="button" data-remove-file="${i}">移除附件</button></div>`).join('');$('#fileList').querySelectorAll('button').forEach(b=>b.onclick=()=>{keptFiles.splice(Number(b.dataset.removeFile),1);renderFiles();});}
 function previewPF(){const f=$('#recordForm');$('#pfPreview').textContent=format(pf({conductivity:f.elements.conductivity.value,seebeck:f.elements.seebeck.value,temperature:f.elements.temperature.value}));}
 function newCode(){return allocateCodes(own,today(),1)[0];}
-async function saveForm(e){e.preventDefault();const btn=$('#saveBtn');btn.disabled=true;$('#formError').textContent='';try{const form=e.currentTarget,data=Object.fromEntries(new FormData(form)),files=[...form.elements.files.files];if(files.some(f=>f.size>10*1024*1024))throw Error('附件每个最多 10 MB，请将大文件另存并在备注中记录路径。');if(files.length+keptFiles.length>20)throw Error('每条实验最多添加 20 个附件。');const r=validate(data);r.id=editing?.id||crypto.randomUUID();r.code=editing?.code||newCode();r.createdAt=editing?.createdAt||new Date().toISOString();r.updatedAt=new Date().toISOString();r.files=[...keptFiles,...files.map(f=>({name:f.name,type:f.type,size:f.size,blob:f}))];await putMany([r]);own=await loadRecords();own.sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));$('#recordDialog').close();mode='mine';search='';hostFilter='';dopantFilter='';statusFilter='';batchFilter='';selected.clear();if(page!=='records'){page='records';location.hash='records';}render();toast('实验已保存到此浏览器。可以继续补充或导出备份。');}catch(err){$('#formError').textContent='未保存：'+(err?.name==='QuotaExceededError'?'浏览器空间不足，请导出备份并减少附件。':err.message||'请检查浏览器存储权限。');}finally{btn.disabled=false;}}
+async function saveForm(e){e.preventDefault();const btn=$('#saveBtn');btn.disabled=true;$('#formError').textContent='';try{const form=e.currentTarget,data=Object.fromEntries(new FormData(form)),files=[...form.elements.files.files];if(files.some(f=>f.size>10*1024*1024))throw Error('附件每个最多 10 MB，请将大文件另存并在备注中记录路径。');if(files.length+keptFiles.length>20)throw Error('每条实验最多添加 20 个附件。');const r=validate(data);r.id=editing?.id||draftRecordId;r.code=editing?.code||newCode();r.createdAt=editing?.createdAt||new Date().toISOString();r.updatedAt=new Date().toISOString();r.files=[...keptFiles,...files.map(f=>({name:f.name,type:f.type,size:f.size,blob:f}))];await persistRecords([r],draftRevision);own.sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));$('#recordDialog').close();mode='mine';search='';hostFilter='';dopantFilter='';statusFilter='';batchFilter='';selected.clear();if(page!=='records'){page='records';location.hash='records';}render();toast(cloud.enabled?'实验已保存到阿里云。':'实验已保存到此浏览器，尚未开启云端。');}catch(err){$('#formError').textContent='未保存或待确认：'+(err?.name==='QuotaExceededError'?'浏览器空间不足，请导出备份并减少附件。':err.message||'请检查存储连接。');}finally{btn.disabled=false;}}
 function openBatch(){
-  if(!db){toast('本地数据库不可用，暂时不能保存。');return;}
-  $('#batchForm').reset();$('#batchForm').elements.date.value=today();batchRows=[];batchUndo=null;batchDraftId=crypto.randomUUID();$('#batchError').textContent='';$('#batchTemplate').innerHTML='<option value="">从空白开始</option>'+own.slice(0,60).map(r=>`<option value="${esc(r.id)}">${esc(r.sample||r.code)} · ${esc(r.title)}</option>`).join('');renderBatchRows();$('#batchDialog').showModal();
+  if(cloudBlocked||(!db&&!cloud.enabled)){toast('存储尚未连通，暂时不能保存。');return;}
+  batchRevision=cloud.revision;$('#batchForm').reset();$('#batchForm').elements.date.value=today();batchRows=[];batchUndo=null;batchDraftId=crypto.randomUUID();$('#batchError').textContent='';$('#batchTemplate').innerHTML='<option value="">从空白开始</option>'+own.slice(0,60).map(r=>`<option value="${esc(r.id)}">${esc(r.sample||r.code)} · ${esc(r.title)}</option>`).join('');renderBatchRows();$('#batchDialog').showModal();
 }
 function updateBatchSummary(){
   $('#batchRowCount').textContent=`${batchRows.length} 个样品`;$('#batchSaveHint').textContent=batchRows.length?`${batchRows.length} 条独立记录 · 保存到同一批次`:'尚未保存 · 可逐行修改或移除';$('#saveBatchBtn').textContent=batchRows.length?`保存 ${batchRows.length} 个样品`:'保存整批样品';$('#saveBatchBtn').disabled=!batchRows.length;$('#undoBatch').hidden=!batchUndo;
@@ -136,20 +153,40 @@ function generateBatch(){try{replaceBatchRows(generateRows({loadings:$('#batchLo
 function addBatchRow(){if(batchRows.length>=MAX_BATCH_ROWS){$('#batchError').textContent=`一次最多 ${MAX_BATCH_ROWS} 行。`;return;}const used=new Set(batchRows.map(r=>r.sample));let n=batchRows.length+1,prefix=$('#batchPrefix').value.trim()||'S',sample;do{sample=prefix+'-'+String(n++).padStart(3,'0');}while(used.has(sample));batchRows.push({sample,loading:'',anneal:'',annealTime:'',conductivity:'',seebeck:'',temperature:'',notes:''});renderBatchRows();}
 async function saveBatch(e){
   e.preventDefault();const btn=$('#saveBatchBtn');if(btn.disabled)return;btn.disabled=true;$('#batchError').textContent='';
-  try{const common=Object.fromEntries(new FormData(e.currentTarget));const records=prepareBatch(common,batchRows,{batchId:batchDraftId,existing:own,codeDate:today()});await putMany(records);own=[...records,...own].sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));$('#batchDialog').close();mode='mine';search='';hostFilter='';dopantFilter='';statusFilter='';batchFilter=batchDraftId;selected.clear();page='records';if(location.hash!=='#records')location.hash='records';render();toast(`已一次保存 ${records.length} 个样品，当前仅显示这一批。`);}
+  try{const common=Object.fromEntries(new FormData(e.currentTarget));let rowIndex=0;const records=prepareBatch(common,batchRows,{batchId:batchDraftId,existing:own,codeDate:today(),idFactory:()=>batchDraftId+'-'+rowIndex++});await persistRecords(records,batchRevision);own.sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));$('#batchDialog').close();mode='mine';search='';hostFilter='';dopantFilter='';statusFilter='';batchFilter=batchDraftId;selected.clear();page='records';if(location.hash!=='#records')location.hash='records';render();toast(`已一次保存 ${records.length} 个样品${cloud.enabled?'到阿里云':''}，当前仅显示这一批。`);}
   catch(err){$('#batchError').textContent='整批未保存：'+(err?.name==='QuotaExceededError'?'浏览器空间不足，请导出备份后重试。':err.message||'保存失败，请重试。');const i=Number(err.message?.match(/^第 (\d+) 行/)?.[1]);if(i)$('#batchRows').querySelector(`input[data-row="${i-1}"]`)?.focus();}
   finally{btn.disabled=!batchRows.length;}
 }
 function field(label,value,wide=false){return `<div ${wide?'class="wide"':''}><label>${label}</label><p>${esc(value??'')||'—'}</p></div>`;}
 function showDetail(id){const r=byId(id);if(!r)return;currentDetail=r;
   $('#detailContent').innerHTML=`<div class="dialog-top"><div><div class="eyebrow">${esc(r.code)} ${mode==='demo'?'· FICTIONAL DEMO':''}</div><h2>${esc(r.title)}</h2><p>${esc(r.date)} · ${esc(r.project||'未分类系列')} · ${esc(r.sample||'未填样品编号')}</p></div><button class="icon-button" data-close="detailDialog" aria-label="关闭">${icon('x')}</button></div><div class="detail-body">${status(r)}<div class="detail-grid">${field('主体材料',r.host)}${field('掺杂剂',r.dopant)}${field('掺杂量',loadingText(r))}${field('计算基准',r.reference,true)}</div><div class="result-strip"><div><small>σ · S/cm</small><strong>${format(r.conductivity)}</strong></div><div><small>S · μV/K</small><strong>${format(r.seebeck)}</strong></div><div><small>计算 PF · μW m⁻¹ K⁻²</small><strong>${format(pf(r))}</strong></div></div><div class="detail-grid">${field('测试温度（K）',format(r.temperature))}${field('测量方式 / 方向',r.measurement)}${field('数据性质',mode==='demo'?'虚构演示数据':'个人实验记录')}</div><h3>溶液、制膜与退火</h3><div class="detail-grid">${field('溶剂',r.solvent)}${field('主体浓度（mg/mL）',format(r.solutionConc))}${field('混合条件',r.mixing)}${field('制膜方式',r.coating)}${field('制膜参数',r.coatingParams)}${field('基底 / 电极',r.substrate)}${field('退火温度（°C）',format(r.anneal))}${field('退火时间（min）',format(r.annealTime))}${field('膜厚（nm）',format(r.thickness))}${field('环境 / 气氛',r.atmosphere)}${field('材料批号',r.lot)}${field('工艺备注',r.processNotes)}</div><h3>观察与下一步</h3><p class="notes-text">${esc(r.notes||'尚未填写。')}</p><h3>附件</h3>${r.files?.length?r.files.map((f,i)=>`<button class="attachment" data-file="${i}">${icon('paperclip')}${esc(f.name)}<small>${format(f.size/1024)} KB ↓</small></button>`).join(''):'<p class="notes-text">暂无附件。</p>'}</div><div class="dialog-actions"><span>${mode==='demo'?'示例只读，复制后可记录你的实验':'修改会更新当前记录；可先导出备份'}</span><button class="button" id="copyDetail">${icon('copy')}复制配方</button>${mode==='mine'?'<button class="button primary" id="editDetail">补充 / 修改</button>':''}</div>`;
-  $('#detailContent').querySelector('[data-close]').onclick=()=>$('#detailDialog').close();$('#copyDetail').onclick=()=>{$('#detailDialog').close();openForm(r,true);};if($('#editDetail'))$('#editDetail').onclick=()=>{$('#detailDialog').close();openForm(r,false);};$('#detailContent').querySelectorAll('[data-file]').forEach(b=>b.onclick=()=>{const f=currentDetail.files[Number(b.dataset.file)];download(f.blob,f.type||'application/octet-stream',f.name);});$('#detailDialog').showModal();
+  $('#detailContent').querySelector('[data-close]').onclick=()=>$('#detailDialog').close();$('#copyDetail').onclick=()=>{$('#detailDialog').close();openForm(r,true);};if($('#editDetail'))$('#editDetail').onclick=()=>{$('#detailDialog').close();openForm(r,false);};$('#detailContent').querySelectorAll('[data-file]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const f=currentDetail.files[Number(b.dataset.file)];download(await cloud.attachment(currentDetail,f),f.type||'application/octet-stream',f.name);}catch(err){toast('附件下载失败：'+err.message);}finally{b.disabled=false;}});$('#detailDialog').showModal();
   if(r.batchId&&r.batchName){const box=document.createElement('div');box.className='batch-summary';box.innerHTML=`<span>所属批次 · ${esc(r.batchName)}</span><button type="button" class="text-button">查看整批样品 ${icon('arrow-right')}</button>`;box.querySelector('button').onclick=()=>{$('#detailDialog').close();search='';hostFilter='';dopantFilter='';statusFilter='';batchFilter=r.batchId;page='records';location.hash='records';render();};$('#detailContent .detail-body').prepend(box);}
 }
 function blobToBase64(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=reject;reader.readAsDataURL(blob);});}
-async function exportBackup(){const btn=$('#backupBtn');btn.disabled=true;$('#backupStatus').textContent='正在打包记录和附件…';try{const records=[];for(const r of own){const files=[];for(const f of r.files||[])files.push({name:f.name,type:f.type,size:f.size,data:await blobToBase64(f.blob)});records.push({...r,files});}download(JSON.stringify({app:'dopant-lab',version:1,exportedAt:new Date().toISOString(),records},null,2),'application/json',`dopant-lab-backup-${today()}.json`);$('#backupStatus').textContent=`已导出 ${records.length} 条个人记录及附件。请妥善保管备份文件。`;}catch(err){$('#backupStatus').textContent='备份失败：'+err.message;}finally{btn.disabled=false;}}
-async function importBackup(e){const file=e.target.files[0];if(!file)return;$('#backupStatus').textContent='正在校验备份…';try{if(!db)throw Error('本地数据库不可用。');if(file.size>200*1024*1024)throw Error('备份超过 200 MB，请分批处理。');const data=JSON.parse(await file.text());if(data.app!=='dopant-lab'||data.version!==1||!Array.isArray(data.records))throw Error('这不是本工具支持的备份文件。');if(data.records.length>10000)throw Error('一次最多恢复 10000 条记录。');const ids=new Set(own.map(r=>r.id)),codes=new Set(own.map(r=>r.code));const records=[];for(const original of data.records){const r=validate(original);r.id=String(original.id||crypto.randomUUID());if(ids.has(r.id))r.id=crypto.randomUUID();ids.add(r.id);r.code=String(original.code||'EXP-IMPORT');while(codes.has(r.code))r.code+='-copy';codes.add(r.code);r.createdAt=String(original.createdAt||new Date().toISOString());r.updatedAt=new Date().toISOString();if(r.files.length>20)throw Error('单条记录附件数超过限制。');r.files=r.files.map(f=>{if(typeof f.data!=='string'||f.data.length>15*1024*1024)throw Error('备份附件无效或过大。');const bytes=Uint8Array.from(atob(f.data),c=>c.charCodeAt(0));if(bytes.length>10*1024*1024)throw Error('附件超过 10 MB。');return {name:String(f.name||'attachment'),type:String(f.type||'application/octet-stream'),size:bytes.length,blob:new Blob([bytes],{type:String(f.type||'application/octet-stream')})};});records.push(r);}await putMany(records);own=await loadRecords();own.sort((a,b)=>b.date.localeCompare(a.date));setSource('mine');$('#backupStatus').textContent=`成功恢复 ${records.length} 条记录，原有记录已保留。`;}catch(err){$('#backupStatus').textContent='未导入：'+err.message;}finally{e.target.value='';}}
-$('#newBtn').onclick=()=>openForm();$('#demoBtn').onclick=()=>setSource('demo');$('#mineBtn').onclick=()=>setSource('mine');$('#helpBtn').onclick=()=>$('#backupDialog').showModal();$('#backupTopBtn').onclick=()=>$('#backupDialog').showModal();$('#recordForm').onsubmit=saveForm;$('#recordForm').addEventListener('input',previewPF);$('#backupBtn').onclick=exportBackup;$('#importInput').onchange=importBackup;
+async function exportBackup(recordsToExport=own){const btn=$('#backupBtn');btn.disabled=true;$('#backupStatus').textContent='正在打包记录和附件…';try{const records=[];for(const r of recordsToExport){const files=[];for(const f of r.files||[])files.push({name:f.name,type:f.type,size:f.size,data:await blobToBase64(await cloud.attachment(r,f))});records.push({...r,files});}download(JSON.stringify({app:'dopant-lab',version:1,exportedAt:new Date().toISOString(),records},null,2),'application/json',`dopant-lab-backup-${today()}.json`);$('#backupStatus').textContent=`已导出 ${records.length} 条个人记录及附件。请妥善保管备份文件。`;}catch(err){$('#backupStatus').textContent='备份失败：'+err.message;}finally{btn.disabled=false;}}
+async function importBackup(e){
+  const file=e.target.files[0];if(!file)return;let saved=0;$('#backupStatus').textContent='正在校验备份…';
+  try{
+    if(cloudBlocked||(!db&&!cloud.enabled))throw Error('存储尚未连通。');
+    if(file.size>200*1024*1024)throw Error('备份超过 200 MB，请分批处理。');
+    const data=JSON.parse(await file.text());
+    if(data.app!=='dopant-lab'||data.version!==1||!Array.isArray(data.records))throw Error('这不是本工具支持的备份文件。');
+    if(data.records.length>10000)throw Error('一次最多恢复 10000 条记录。');
+    const ids=new Set(own.map(r=>r.id)),codes=new Set(own.map(r=>r.code)),records=[];
+    for(const original of data.records){
+      const r=validate(original);r.id=String(original.id||crypto.randomUUID());
+      if(ids.has(r.id)||!/^[a-zA-Z0-9_-]{1,100}$/.test(r.id)||r.id.startsWith('demo-'))r.id=crypto.randomUUID();ids.add(r.id);
+      r.code=String(original.code||'EXP-IMPORT').slice(0,70);while(codes.has(r.code))r.code+='-copy';codes.add(r.code);
+      r.createdAt=String(original.createdAt||new Date().toISOString());r.updatedAt=new Date().toISOString();
+      if(r.files.length>20)throw Error('单条记录附件数超过限制。');
+      r.files=r.files.map(f=>{if(typeof f.data!=='string'||f.data.length>15*1024*1024)throw Error('备份附件无效或过大。');const bytes=Uint8Array.from(atob(f.data),c=>c.charCodeAt(0));if(bytes.length>10*1024*1024)throw Error('附件超过 10 MB。');return {name:String(f.name||'attachment'),type:String(f.type||'application/octet-stream'),size:bytes.length,blob:new Blob([bytes],{type:String(f.type||'application/octet-stream')})};});records.push(r);
+    }
+    for(let offset=0;offset<records.length;offset+=200){const part=records.slice(offset,offset+200);await persistRecords(part);saved+=part.length;$('#backupStatus').textContent=`已恢复 ${saved} / ${records.length} 条…`;}
+    setSource('mine');$('#backupStatus').textContent=`成功恢复 ${saved} 条记录${cloud.enabled?'到阿里云':''}，原有记录已保留。`;
+  }catch(err){$('#backupStatus').textContent=`${saved?'已恢复 '+saved+' 条；剩余未完成：':'未导入：'}${err.message}`;}finally{e.target.value='';}
+}
+$('#newBtn').onclick=()=>openForm();$('#demoBtn').onclick=()=>setSource('demo');$('#mineBtn').onclick=()=>setSource('mine');$('#helpBtn').onclick=()=>$('#backupDialog').showModal();$('#backupTopBtn').onclick=()=>$('#backupDialog').showModal();$('#recordForm').onsubmit=saveForm;$('#recordForm').addEventListener('input',previewPF);$('#backupBtn').onclick=()=>exportBackup();$('#importInput').onchange=importBackup;
 $('#batchBtn').onclick=openBatch;$('#batchForm').onsubmit=saveBatch;$('#generateBatch').onclick=generateBatch;$('#addBatchRow').onclick=addBatchRow;
 $('#undoBatch').onclick=()=>{if(batchUndo){const old=batchRows;batchRows=batchUndo;batchUndo=old;renderBatchRows();}};
 $('#applyBatchPaste').onclick=()=>{try{replaceBatchRows(parsePaste($('#batchPaste').value,$('#batchPrefix').value));}catch(err){$('#batchError').textContent=err.message;}};
@@ -157,5 +194,35 @@ $('#batchForm').addEventListener('input',updateBatchSummary);$('#batchForm').ele
 $('#batchTemplate').onchange=e=>{const r=own.find(r=>r.id===e.target.value);if(!r)return;const f=$('#batchForm');for(const key of [...FIELDS,...NUMBERS,'basis']){if(['title','batchId','batchName','date','status','sample','notes','conductivity','seebeck'].includes(key))continue;const field=f.elements.namedItem(key);if(field)field.value=r[key]??'';}updateBatchSummary();};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).close());
 window.addEventListener('hashchange',()=>{page=location.hash.slice(1)||'records';render();window.scrollTo(0,0);});
-async function init(){try{db=await openDB();own=await loadRecords();own.sort((a,b)=>b.date.localeCompare(a.date));if(own.length)mode='mine';}catch(err){toast('本地存储不可用：'+err.message+'，当前仅可查看演示。');$('#newBtn').disabled=true;$('#batchBtn').disabled=true;}page=location.hash.slice(1)||'records';render();}
+async function refreshCloud(){
+  const button=document.getElementById('refreshCloud');if(button)button.disabled=true;
+  try{await cloud.refresh();cloudBlocked=false;own=cloud.enabled?cloud.records:localLegacy;mode=own.length?'mine':mode;render();toast(cloud.enabled?'已读取云端最新记录。若有未保存表单，请重新打开记录核对后再保存。':'云端尚未配置，当前仍为本地保存。');}
+  catch(err){cloudBlocked=true;toast(err.message);render();}finally{if(button)button.disabled=false;}
+}
+async function migrateLocal(){
+  if(!cloud.enabled||cloudBlocked)return;
+  if(!confirm(`将此浏览器 ${localLegacy.length} 条个人记录及附件上传到阿里云？不会上传示例数据，也不会删除本地原件。建议先导出本地备份。`))return;
+  const button=document.getElementById('migrateLocal');button.disabled=true;let saved=0,skipped=0;
+  try{
+    await cloud.refresh();own=cloud.records;
+    const ids=new Set(own.map(r=>r.id)),codes=new Set(own.map(r=>r.code)),records=[];
+    for(const original of localLegacy){
+      const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([original.id,original.code,original.createdAt])));
+      const id='legacy-'+Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');
+      if(ids.has(id)){skipped++;continue;}
+      const record={...original,id,files:original.files||[]};record.code=String(original.code||'EXP-LOCAL').slice(0,70);while(codes.has(record.code))record.code+='-local';codes.add(record.code);records.push(record);
+    }
+    for(let offset=0;offset<records.length;offset+=200){const part=records.slice(offset,offset+200);await persistRecords(part);saved+=part.length;document.getElementById('cloudStatus').textContent=`正在迁移 ${saved} / ${records.length} 条…`;}
+    setSource('mine');document.getElementById('cloudMigration').hidden=true;toast(`已迁移 ${saved} 条，跳过已迁移 ${skipped} 条；本地原件保留。`);
+  }catch(err){toast(`已迁移 ${saved} 条；其余未完成：${err.message}。本地原件仍保留，可重试并跳过已迁移记录。`);render();}
+  finally{button.disabled=false;}
+}
+async function init(){
+  try{db=await openDB();localLegacy=await loadRecords();own=localLegacy;}catch(err){toast('本地旧记录无法读取：'+err.message);}
+  try{await cloud.refresh();if(cloud.enabled)own=cloud.records;}catch(err){cloudBlocked=true;toast(err.message);}
+  if(own.length)mode='mine';page=location.hash.slice(1)||'records';render();
+  const label=document.querySelector('.storage-note');if(label&&cloud.enabled)label.innerHTML='<span class="status-dot"></span>阿里云私有保存<small>换设备登录后，点刷新读取最新记录。</small>';
+  const badge=document.querySelector('.local-badge');if(badge)badge.textContent=cloud.enabled?'阿里云保存':cloudBlocked?'云端未连接':'本地保存';
+  document.getElementById('refreshCloud').onclick=refreshCloud;document.getElementById('migrateLocal').onclick=migrateLocal;document.getElementById('exportLocal').onclick=()=>{$('#backupDialog').showModal();exportBackup(localLegacy);};
+}
 init();

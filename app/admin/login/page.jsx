@@ -35,7 +35,7 @@ export default async function AdminLogin({ searchParams }) {
           {(!config || error) && <p className={styles.error} role="alert">{!config ? "管理员账号正在配置，工作台暂时锁定。" : error}</p>}
           <button type="submit" disabled={!config}>登录实验工作台 <span aria-hidden="true">→</span></button>
         </form>
-        <p className={styles.note}>你的实验记录仍保存在当前浏览器。退出登录不会删除记录。</p>
+        <p className={styles.note}>实验记录按工作台显示的存储方式保存。退出登录不会删除记录。</p>
       </section>
       <p className={styles.footer}>Dopant Lab · 为下一次发现留好记录</p>
     </main>
