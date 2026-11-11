@@ -1,9 +1,15 @@
+import { categories, originalPaperId, photoUrl } from "../lib/site-content.mjs";
+import { publicSiteContent } from "../lib/site-content.server.mjs";
+
+export const dynamic = "force-dynamic";
+
 const navItems = [
   ["关于我", "#about"],
   ["科研", "#research"],
-  ["管理员登录", "/lab"],
+  ["实验工作台", "/lab"],
   ["摄影", "#photography"],
   ["联系方式", "#contact"],
+  ["网站管理", "/admin/site"],
 ];
 
 const aboutCards = [
@@ -22,41 +28,6 @@ const aboutCards = [
     text: "让科研的理性、表达的温度与视觉的秩序，在长期创作中彼此照亮。",
     meta: "Portfolio",
   },
-];
-
-const architecturePhotos = [
-  ["湖南大学校碑", "/images/photography/architecture/hunan_university_stone_sign.jpg"],
-  ["特藏分馆", "/images/photography/architecture/hunan_university_red_building_front.jpg"],
-  ["东方红广场", "/images/photography/architecture/campus_statue_square.jpg"],
-  ["冬日的爱晚亭", "/images/photography/architecture/aiwan_pavilion_winter.jpg"],
-  ["大成殿建筑", "/images/photography/architecture/dacheng_hall.jpg"],
-  ["孔庙", "/images/photography/architecture/hunan_university_courtyard.jpg"],
-  ["沁园春长沙诗词", "/images/photography/architecture/hunan_university_gate.jpg"],
-  ["绿荫红楼", "/images/photography/architecture/red_brick_building_garden.jpg"],
-  ["红砖建筑", "/images/photography/architecture/red_brick_building.jpg"],
-  ["书院雪景", "/images/photography/architecture/seek_truth_building.jpg"],
-  ["秋日操场", "/images/photography/architecture/sports_field_autumn.jpg"],
-  ["岳麓书院大门", "/images/photography/architecture/yuelu_academy_entrance.jpg"],
-  ["春日岳麓书院", "/images/photography/architecture/yuelu_academy_spring_gate.jpg"],
-  ["岳麓书院正门", "/images/photography/architecture/yuelu_academy_front_wide.jpg"],
-  ["岳麓书院门庭", "/images/photography/architecture/yuelu_academy_gate_layers.jpg"],
-  ["书院讲堂前坪", "/images/photography/architecture/yuelu_academy_hall_courtyard.jpg"],
-  ["御书阁", "/images/photography/architecture/yuelu_academy_tree_framed_hall.jpg"],
-  ["时物轩", "/images/photography/architecture/yuelu_academy_sunny_roofline.jpg"],
-  ["胜利斋", "/images/photography/architecture/campus_rooftop_courtyard.jpg"],
-  ["山景校园庭院", "/images/photography/architecture/campus_courtyard_mountain_view.jpg"],
-  ["自卑亭", "/images/photography/architecture/zibei_pavilion.jpg"],
-  ["樱花与现代建筑", "/images/photography/nature/cherry_blossoms_modern_building.jpg"],
-  ["林中的传统建筑", "/images/photography/nature/traditional_buildings_forest.jpg"],
-];
-
-const naturePhotos = [
-  ["桂花与屋檐", "/images/photography/nature/osmanthus_roof_bokeh.jpg"],
-  ["春日紫藤", "/images/photography/nature/wisteria_spring.jpg"],
-  ["粉色樱花", "/images/photography/nature/pink_cherry_blossoms.jpg"],
-  ["粉色花朵与建筑", "/images/photography/nature/pink_blossoms_building.jpg"],
-  ["梅花特写", "/images/photography/nature/plum_blossoms_closeup.jpg"],
-  ["黄色花朵与墙面", "/images/photography/nature/yellow_flowers_wall.jpg"],
 ];
 
 const contacts = [
@@ -115,10 +86,10 @@ function PhotoGrid({ title, photos }) {
         <span />
       </div>
       <div className="photo-columns">
-        {photos.map(([alt, src]) => (
-          <figure className="photo-card" key={src}>
-            <img src={src} alt={alt} loading="lazy" />
-            <figcaption>{alt}</figcaption>
+        {photos.map((photo) => (
+          <figure className="photo-card" key={photo.id}>
+            <img src={photoUrl(photo)} alt={photo.caption} loading="lazy" />
+            <figcaption>{photo.caption}</figcaption>
           </figure>
         ))}
       </div>
@@ -126,7 +97,8 @@ function PhotoGrid({ title, photos }) {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const content = await publicSiteContent();
   return (
     <div className="site-shell">
       <header className="site-header">
@@ -153,7 +125,7 @@ export default function Home() {
               <span>用镜头记录时代故事。</span>
             </h1>
             <p className="lead">
-              你好，我是 Carry。这里收录我的科研探索、文字思考与摄影作品，也记录我理解世界的方式。
+              {content.intro}
             </p>
             <div className="hero-actions">
               <a className="primary-button" href="#research">
@@ -204,22 +176,26 @@ export default function Home() {
             <h2>科研</h2>
             <p>关注材料科学与光电领域，收录近期成果与代表性论文。</p>
           </div>
-          <a
+          <div className="paper-list">
+          {content.papers.map(paper => <a
+            key={paper.id}
             className="paper-card reveal"
-            href="https://pubs.acs.org/doi/10.1021/jacs.5c17758"
+            href={paper.link}
             target="_blank"
             rel="noreferrer"
           >
-            <div className="paper-image">
+            {paper.id === originalPaperId && <div className="paper-image">
               <img src="/images/photography/paper.PNG" alt="科研论文截图" />
-            </div>
+            </div>}
             <div>
-              <p className="eyebrow">Paper</p>
-              <h3>JACS 代表性论文</h3>
-              <p>点击进入期刊页面，查看论文摘要与完整内容。</p>
+              <p className="eyebrow">{[paper.venue || "Paper", paper.year].filter(Boolean).join(" · ")}</p>
+              <h3>{paper.title}</h3>
+              {paper.authors && <p>{paper.authors}</p>}
+              {paper.summary && <p>{paper.summary}</p>}
               <span className="text-link">查看论文 →</span>
             </div>
-          </a>
+          </a>)}
+          </div>
         </section>
 
         <section className="photography" id="photography">
@@ -228,8 +204,10 @@ export default function Home() {
             <h2>摄影作品</h2>
             <p>行走于校园与山水之间，用影像保存建筑、季节和光线。</p>
           </div>
-          <PhotoGrid title="建筑" photos={architecturePhotos} />
-          <PhotoGrid title="自然" photos={naturePhotos} />
+          {categories.map(category => {
+            const photos = content.photos.filter(photo => photo.category === category);
+            return photos.length ? <PhotoGrid key={category} title={category} photos={photos} /> : null;
+          })}
         </section>
 
         <section className="contact" id="contact">

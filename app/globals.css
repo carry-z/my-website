@@ -11,6 +11,9 @@
   --shadow: 0 18px 50px rgba(32, 27, 18, 0.09);
 }
 
+.paper-list { display: grid; gap: 18px; }
+.paper-list .paper-card:not(:has(.paper-image)) { grid-template-columns: minmax(0, 1fr); }
+
 * {
   box-sizing: border-box;
 }

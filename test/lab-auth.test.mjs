@@ -39,6 +39,7 @@ test("管理员 cookie 不暴露给前端，生产 HTTPS、安全同站策略、
 });
 test("限制登录回跳，阻止外站与路径穿越", () => {
   assert.equal(safeReturnTo("/lab?series=1"), "/lab?series=1");
+  assert.equal(safeReturnTo("/admin/site"), "/admin/site");
   for (const value of ["https://evil.example", "//evil.example", "/lab/../", "/lab/%2e%2e/admin", "/lab-assets/app.js", "/login", null]) assert.equal(safeReturnTo(value), "/lab");
 });
 test("保护页面、资源及百分号编码别名，公开主页不受影响", () => {
