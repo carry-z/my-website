@@ -7,6 +7,7 @@ const navItems = [
   ["关于我", "#about"],
   ["科研", "#research"],
   ["实验工作台", "/lab"],
+  ["计时器", "/timer"],
   ["摄影", "#photography"],
   ["联系方式", "#contact"],
   ["网站管理", "/admin/site"],
