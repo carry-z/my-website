@@ -1,0 +1,111 @@
+.page {
+  --timer-ink: #20231f;
+  --timer-muted: #77796f;
+  --timer-line: #e7e7df;
+  --timer-green: #2d5949;
+  min-height: 100vh;
+  padding: 0 28px;
+  color: var(--timer-ink);
+  background: radial-gradient(ellipse at 50% 4%, #ffffff 0, #f7f7f1 48%, #f2f2eb 100%);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(45, 89, 73, 0.12);
+}
+
+.brand { font-size: 18px; font-weight: 900; letter-spacing: .02em; }
+.brand span { color: #9b9b90; font-size: 13px; font-weight: 600; }
+.back { color: #66695f; font-size: 13px; font-weight: 700; transition: color .2s ease; }
+.back:hover { color: var(--timer-green); }
+.back span { margin-left: 5px; }
+
+.timerWrap { max-width: 920px; margin: 0 auto; padding: 64px 0 52px; }
+.intro { text-align: center; }
+.kicker { margin: 0 0 10px; color: #9a7446; font-size: 10px; font-weight: 900; letter-spacing: .24em; }
+.intro h1 { margin: 0; font-size: clamp(30px, 4vw, 42px); font-weight: 800; letter-spacing: .02em; }
+.intro > p:last-child { margin: 14px 0 0; color: var(--timer-muted); font-size: 14px; line-height: 1.8; }
+
+.timerCard {
+  margin-top: 34px;
+  padding: 34px clamp(18px, 5vw, 64px) 38px;
+  border: 1px solid rgba(225, 226, 216, .92);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 22px 70px rgba(47, 56, 43, .07);
+}
+
+.modeSwitch { display: flex; justify-content: center; gap: 4px; width: fit-content; margin: 0 auto; padding: 4px; border-radius: 99px; background: #f0f1eb; }
+.modeSwitch button { min-width: 100px; padding: 10px 18px; border: 0; border-radius: 99px; color: #77796f; background: transparent; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.modeSwitch button:disabled { cursor: default; }
+.modeSwitch button.modeActive { color: #fff; background: var(--timer-green); box-shadow: 0 4px 12px rgba(45, 89, 73, .2); }
+
+.clock { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 3vw, 30px); margin: 32px 0 24px; color: #202720; font-variant-numeric: tabular-nums; }
+.clockPart { display: flex; align-items: baseline; gap: clamp(3px, .8vw, 10px); }
+.clockPart strong { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(48px, 10vw, 100px); font-weight: 600; line-height: 1; letter-spacing: -.075em; }
+.clockPart small { color: #8b8d84; font-size: clamp(11px, 1.5vw, 14px); font-weight: 700; }
+.finished { color: #9a7446; }
+
+.durationFields { display: flex; justify-content: center; gap: 12px; margin: 0; padding: 0; border: 0; }
+.durationFields legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.durationField { display: grid; gap: 6px; text-align: center; }
+.durationField > span { color: #8b8d84; font-size: 11px; font-weight: 700; }
+.durationField input { width: 72px; padding: 9px 8px; border: 1px solid var(--timer-line); border-radius: 8px; outline: none; color: #3d453d; background: #fbfbf8; font: 700 15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-align: center; transition: border-color .2s ease, box-shadow .2s ease; }
+.durationField input:focus { border-color: #6f9887; box-shadow: 0 0 0 3px rgba(45, 89, 73, .1); }
+.durationFields:disabled .durationField input { color: #999b94; background: #f5f5f1; }
+.modeHint { margin: 0; color: #888a81; font-size: 12px; text-align: center; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-top: 30px; }
+.controls button { min-height: 44px; padding: 0 24px; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; transition: transform .18s ease, background .18s ease, opacity .18s ease; }
+.controls button:not(:disabled):hover { transform: translateY(-1px); }
+.controls button:disabled { cursor: not-allowed; opacity: .45; }
+.primaryButton { min-width: 120px; border: 1px solid var(--timer-green); color: #fff; background: var(--timer-green); }
+.primaryButton:hover:not(:disabled) { background: #234637; }
+.secondaryButton { border: 1px solid #dfe2da; color: #4d564e; background: #fff; }
+.lapButton { border: 0; color: #66766a; background: transparent; }
+.lapButton span { margin-left: 4px; color: #a97b45; font-size: 17px; vertical-align: -1px; }
+
+.lapPanel { margin-top: 36px; padding: 24px 28px; border: 1px solid rgba(225, 226, 216, .9); border-radius: 14px; background: rgba(255, 255, 255, .64); }
+.lapHeading { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--timer-line); }
+.lapHeading .kicker { margin-bottom: 6px; font-size: 9px; }
+.lapHeading h2 { margin: 0; font-size: 20px; font-weight: 800; }
+.lapHeading > span { padding-bottom: 2px; color: #92948b; font-size: 12px; }
+.emptyLaps { margin: 0; padding: 25px 0 8px; color: #92948b; font-size: 13px; text-align: center; }
+.lapList { margin: 0; padding: 0; list-style: none; }
+.lapList li { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 15px; padding: 14px 0; border-bottom: 1px solid #eeeeea; }
+.lapList li:last-child { border-bottom: 0; }
+.lapIndex { color: #77796f; font-size: 12px; font-weight: 800; }
+.lapList li > span:not(.lapIndex) { display: grid; gap: 5px; }
+.lapList small { color: #a0a197; font-size: 10px; }
+.lapList strong { color: #38433a; font: 700 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.footer { padding: 0 0 26px; color: #a0a197; font-size: 11px; letter-spacing: .08em; text-align: center; }
+
+@media (max-width: 600px) {
+  .page { padding: 0 16px; }
+  .topbar { padding: 18px 0; }
+  .timerWrap { padding: 46px 0 34px; }
+  .intro > p:last-child { max-width: 310px; margin-right: auto; margin-left: auto; font-size: 13px; }
+  .timerCard { margin-top: 26px; padding: 25px 14px 26px; border-radius: 14px; }
+  .clock { gap: 7px; margin: 33px 0 23px; }
+  .clockPart { gap: 3px; }
+  .clockPart strong { font-size: clamp(42px, 12vw, 70px); }
+  .clockPart small { font-size: 10px; }
+  .durationField input { width: 65px; }
+  .controls { gap: 7px; }
+  .controls button { padding: 0 15px; }
+  .primaryButton { min-width: 98px; }
+  .lapButton { flex-basis: 100%; }
+  .lapPanel { margin-top: 22px; padding: 20px 18px; }
+  .lapList li { grid-template-columns: .8fr 1fr 1fr; gap: 8px; }
+  .lapIndex { font-size: 11px; }
+  .lapList strong { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back, .durationField input, .controls button { transition: none; }
+}
