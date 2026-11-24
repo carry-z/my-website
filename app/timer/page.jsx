@@ -11,7 +11,7 @@ export default function TimerPage() {
     <main className={styles.page}>
       <header className={styles.topbar}>
         <a className={styles.brand} href="/">Carry<span> / 工具</span></a>
-        <a className={styles.back} href="/">返回个人主页 <span aria-hidden="true">↗</span></a>
+        <a className={styles.back} href="/tools">返回工具页 <span aria-hidden="true">↗</span></a>
       </header>
       <Timer />
       <footer className={styles.footer}>专注当下，把握每一段时间。</footer>
