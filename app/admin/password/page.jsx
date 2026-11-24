@@ -43,7 +43,8 @@ export default async function PasswordPage({ searchParams }) {
           {(!writable || error) && <p className={styles.error} role="alert">{!writable ? "安全存储尚未配置，暂时无法在网页修改密码。" : error}</p>}
           <button type="submit" disabled={!writable}>保存新密码并重新登录 <span aria-hidden="true">→</span></button>
         </form>
-        <p className={styles.note}>修改密码不会删除或移动你的实验记录。请把新密码保存在自己的密码管理器中，本机的初始密码文件不会自动更新。</p>
+        <p className={styles.note}>修改密码不会删除或移动你的实验记录。请把新密码保存在自己的密码管理器中，本机的初始密码文件不会自动更新。修改后已绑定的通行密钥也将失效，需要重新绑定。</p>
+        <a href="/admin/passkeys">管理通行密钥 →</a>
       </section>
       <p className={styles.footer}>Dopant Lab · 为下一次发现留好记录</p>
     </main>

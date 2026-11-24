@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "14.0.0",
+    "@simplewebauthn/server": "14.1.0",
     "@vercel/blob": "2.8.2",
     "@vercel/oidc": "3.8.10",
     "ali-oss": "6.23.0",

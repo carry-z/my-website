@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { COOKIE_NAME, safeReturnTo, verifySession } from "../../../lib/lab-auth.server.mjs";
 import { loadAuthConfig } from "../../../lib/lab-credential-store.server.mjs";
 import styles from "./login.module.css";
+import { PasskeyLogin } from "../passkeys/passkey-ui";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "管理员登录 | Carry", description: "Carry 的个人实验工作台管理员入口。", robots: { index: false, follow: false } };
@@ -27,6 +28,7 @@ export default async function AdminLogin({ searchParams }) {
         <p className={styles.intro}>{site ? "使用实验工作台的同一账号和密码。" : "登录后，继续你的实验记录。"}</p>
         <div className={styles.notice}><span aria-hidden="true">◈</span> {site ? "网站内容管理仅向管理员开放" : "实验工作台仅向管理员开放"}</div>
         {params.changed === "1" && <p className={styles.success} role="status">密码已更新，请使用新密码重新登录。其他设备的旧登录也已失效。</p>}
+        <PasskeyLogin next={next} enabled={Boolean(config)} />
         <form action="/api/lab-auth/login" method="post" className={styles.form}>
           <input type="hidden" name="next" value={next} />
           <label htmlFor="admin-username">管理员账号</label>
@@ -37,6 +39,7 @@ export default async function AdminLogin({ searchParams }) {
           <button type="submit" disabled={!config}>登录{site ? "网站管理" : "实验工作台"} <span aria-hidden="true">→</span></button>
         </form>
         <p className={styles.note}>{site ? "保存草稿不会改变首页，点击发布后才对外展示。" : "实验记录按工作台显示的存储方式保存。退出登录不会删除记录。"}</p>
+        <p className={styles.hint}>首次使用通行密钥：先用密码登录，再前往 <a href="/admin/passkeys">绑定通行密钥</a>。</p>
       </section>
       <p className={styles.footer}>Dopant Lab · 为下一次发现留好记录</p>
     </main>

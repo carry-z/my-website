@@ -7,6 +7,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
+import { virtualPasskey } from "../test/webauthn-fixture.mjs";
 
 // Explicitly fictional fixture. Never use this account on the public website.
 const password = "fixture-only-not-a-real-password";
@@ -15,7 +16,7 @@ const configured = !process.argv.includes("--unconfigured");
 const testDir = await mkdtemp(join(tmpdir(), "carry-auth-http-"));
 const authEnv = { NODE_ENV: "production", LAB_ADMIN_USERNAME: "fixture-admin", LAB_ADMIN_PASSWORD_HASH: configured ? passwordHash : "", LAB_SESSION_SECRET: configured ? randomBytes(32).toString("hex") : "", LAB_AUTH_STORE_MODE: configured ? "file" : "environment", LAB_AUTH_LOCAL_FILE: join(testDir, "auth.json"), LAB_AUTH_INITIALIZE: "1", VERCEL: "" };
 if (configured) await initializeCredentialStore(authEnv);
-const port = configured ? 3179 : 3180;
+const port = Number(process.env.FIXTURE_PORT || (configured ? 3191 : 3192));
 const origin = `http://localhost:${port}`;
 const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "-p", String(port)], {
   cwd: new URL("../", import.meta.url),
@@ -76,6 +77,40 @@ try {
     }
     response = await request("/api/lab-auth/session", { headers: { cookie } });
     assert.equal(response.status, 200); assert.equal((await response.json()).authenticated, true);
+    assert.equal((await request("/admin/passkeys")).status, 307);
+    response = await request("/admin/passkeys", { headers: { cookie } });
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /绑定新的通行密钥/);
+    const passkeyPost = (action, body, session = cookie, site = origin) => request("/api/lab-auth/passkeys/" + action, {
+      method: "POST", headers: { cookie: session, origin: site, "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    assert.equal((await passkeyPost("register-options", { password, name: "test" }, "")).status, 401);
+    assert.equal((await passkeyPost("register-options", { password, name: "test" }, cookie, "https://evil.invalid")).status, 403);
+    assert.equal((await passkeyPost("register-options", { password: "incorrect", name: "test" })).status, 403);
+    response = await passkeyPost("register-options", { password, name: "HTTP fixture" });
+    assert.equal(response.status, 200, await response.clone().text());
+    const challengeCookie = response.headers.get("set-cookie").split(";")[0];
+    assert.match(response.headers.get("set-cookie"), /HttpOnly/);
+    const { options: registration } = await response.json();
+    const device = virtualPasskey(), rp = { origin, rpID: "localhost" };
+    response = await passkeyPost("register-verify", { response: device.registration(registration, rp) }, cookie + "; " + challengeCookie);
+    assert.equal(response.status, 200, await response.clone().text());
+    response = await passkeyPost("login-options", {}, "");
+    assert.equal(response.status, 200);
+    const loginChallengeCookie = response.headers.get("set-cookie").split(";")[0];
+    const { options: authentication } = await response.json();
+    const assertion = device.authentication(authentication, rp);
+    response = await passkeyPost("login-verify", { response: assertion, next: "/admin/site" }, loginChallengeCookie);
+    assert.equal(response.status, 200, await response.clone().text());
+    assert.equal((await response.json()).next, "/admin/site");
+    const passkeySession = response.headers.getSetCookie().find(value => value.startsWith("carry_lab_admin=")).split(";")[0];
+    assert.equal((await request("/admin/site", { headers: { cookie: passkeySession } })).status, 200);
+    response = await passkeyPost("login-verify", { response: assertion }, loginChallengeCookie);
+    assert.equal(response.status, 400);
+    assert.ok(!response.headers.getSetCookie().some(value => value.startsWith("carry_lab_admin=")));
+    assert.equal((await passkeyPost("revoke", { password, id: device.id })).status, 200);
+    assert.equal((await passkeyPost("login-options", {}, "")).status, 400);
+    console.log("PASS: password-confirmed passkey registration → verified ES256 login → shared admin access → replay rejected → revoke.");
     response = await request("/admin/site");
     assert.equal(response.status, 307);
     assert.equal(location(response).searchParams.get("next"), "/admin/site");

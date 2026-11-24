@@ -31,6 +31,7 @@ export default async function SiteAdmin() {
         <div className={styles.links}>
           <a href="/lab">实验工作台</a>
           <a href="/admin/password">修改密码</a>
+          <a href="/admin/passkeys">通行密钥</a>
           <form action="/api/lab-auth/logout" method="post"><button type="submit">退出登录</button></form>
         </div>
       </header>
