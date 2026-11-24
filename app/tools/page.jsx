@@ -32,14 +32,31 @@ export default function ToolsPage() {
         <a className={styles.back} href="/">返回主页 <span aria-hidden="true">↗</span></a>
       </header>
       <section className={styles.content}>
-        <p className={styles.eyebrow}>TOOLS & WORKSPACE</p>
-        <h1>工具</h1>
-        <p className={styles.intro}>专注时间，也整理研究。选择一个工具继续。</p>
+        <div className={styles.eyebrow}><span>TOOLS & WORKSPACE</span><i>PERSONAL TOOLKIT · 02</i></div>
+        <h1>专注与研究，<br /><span>都可以更顺手。</span></h1>
+        <p className={styles.intro}>从一段专注时间，到一次实验记录。把常用工具放在一起，让想法更快开始。</p>
+        <div className={styles.highlights}>
+          <span><i>01</i> 专注计时</span>
+          <span><i>02</i> 实验记录</span>
+          <span><i>↗</i> 即开即用</span>
+        </div>
         <div className={styles.grid}>
           {tools.map((tool) => (
-            <a className={styles.card} href={tool.href} key={tool.href}>
-              <div className={styles.cardTop}><span>{tool.number}</span><span>{tool.category}</span></div>
-              <div>
+            <a className={`${styles.card} ${tool.number === "01" ? styles.timerCard : styles.labCard}`} href={tool.href} key={tool.href}>
+              <div className={styles.cardTop}><span>{tool.number} <i>/ TOOL</i></span><span>{tool.category}</span></div>
+              {tool.number === "01" ? (
+                <div className={styles.timerArtwork} aria-hidden="true">
+                  <span className={styles.artRing} />
+                  <span className={styles.artClock}>25<span>:</span>00</span>
+                  <span className={styles.artCaption}>A MOMENT FOR FOCUS</span>
+                </div>
+              ) : (
+                <div className={styles.labArtwork} aria-hidden="true">
+                  <span className={styles.labPaper}><i>LAB NOTEBOOK</i><b>Sample record</b><em /><em /><em /></span>
+                  <span className={styles.labMark}>✳</span>
+                </div>
+              )}
+              <div className={styles.cardCopy}>
                 <h2>{tool.title}</h2>
                 <p>{tool.description}</p>
               </div>
@@ -47,6 +64,7 @@ export default function ToolsPage() {
             </a>
           ))}
         </div>
+        <p className={styles.note}><span /> 所有工具均可从这里快速进入</p>
       </section>
       <footer className={styles.footer}>Carry · Personal Tools</footer>
     </main>
