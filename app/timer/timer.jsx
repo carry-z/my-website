@@ -40,6 +40,7 @@ export default function Timer() {
   const shownMilliseconds = mode === "countdown" ? Number(hours) === 0 : elapsed < 3600000;
   const shownTime = formatTime(mode === "countdown" ? remaining : elapsed, shownMilliseconds);
   const sliderMinutes = Math.min(Number(hours) * 60 + Number(minutes), 180);
+  const timerStatus = running ? "正在计时" : mode === "countdown" && duration > 0 && remaining === 0 ? "本轮完成" : elapsed > 0 ? "已暂停" : "准备就绪";
 
   useEffect(() => {
     if (!running) return undefined;
@@ -71,6 +72,16 @@ export default function Timer() {
 
   function updateFromSlider(value) {
     const totalMinutes = Number(value);
+    setHours(String(Math.floor(totalMinutes / 60)).padStart(2, "0"));
+    setMinutes(String(totalMinutes % 60).padStart(2, "0"));
+    setSeconds("00");
+    setMilliseconds("000");
+    setElapsed(0);
+    setLaps([]);
+    setLastLapAt(0);
+  }
+
+  function choosePreset(totalMinutes) {
     setHours(String(Math.floor(totalMinutes / 60)).padStart(2, "0"));
     setMinutes(String(totalMinutes % 60).padStart(2, "0"));
     setSeconds("00");
@@ -117,28 +128,38 @@ export default function Timer() {
   return (
     <section className={styles.timerWrap} aria-label="在线计时器">
       <div className={styles.intro}>
-        <p className={styles.kicker}>FOCUS · TIME</p>
-        <h1>把时间，交还给专注。</h1>
-        <p>设置一段属于自己的节奏，开始计时，也别忘了记录每个阶段。</p>
+        <p className={styles.kicker}>FOCUS TIMER <span>·</span> 专注计时</p>
+        <h1>为专注，留出一段完整的时间。</h1>
+        <p>自由设定节奏，记录每个阶段。分钟计时精确到毫秒，长时计时清晰到秒。</p>
       </div>
 
       <div className={styles.timerCard}>
-        <div className={styles.modeSwitch} role="tablist" aria-label="计时模式">
-          <button className={mode === "countdown" ? styles.modeActive : ""} onClick={() => changeMode("countdown")} role="tab" aria-selected={mode === "countdown"} disabled={running}>倒计时</button>
-          <button className={mode === "countup" ? styles.modeActive : ""} onClick={() => changeMode("countup")} role="tab" aria-selected={mode === "countup"} disabled={running}>正计时</button>
+        <div className={styles.timerToolbar}>
+          <div className={styles.modeSwitch} role="tablist" aria-label="计时模式">
+            <button className={mode === "countdown" ? styles.modeActive : ""} onClick={() => changeMode("countdown")} role="tab" aria-selected={mode === "countdown"} disabled={running}>倒计时</button>
+            <button className={mode === "countup" ? styles.modeActive : ""} onClick={() => changeMode("countup")} role="tab" aria-selected={mode === "countup"} disabled={running}>正计时</button>
+          </div>
+          <span className={`${styles.status} ${running ? styles.statusRunning : ""}`}><i />{timerStatus}</span>
         </div>
 
         <div className={`${styles.clock} ${mode === "countdown" && remaining === 0 && elapsed > 0 ? styles.finished : ""}`} aria-live="off" aria-label={shownMilliseconds ? `${shownTime.values[0]}分${shownTime.values[1]}秒${shownTime.values[2]}毫秒` : shownTime.text}>
           {shownTime.values.map((part, index) => (
-            <span className={styles.clockPart} key={index}>
-              <strong>{part}</strong>
-              <small>{shownTime.labels[index]}</small>
+            <span className={styles.clockGroup} key={index}>
+              <span className={styles.clockPart}><strong>{part}</strong><small>{shownTime.labels[index]}</small></span>
+              {index < shownTime.values.length - 1 && <span className={index === 1 && shownMilliseconds ? styles.decimalSeparator : styles.clockSeparator}>{index === 1 && shownMilliseconds ? "." : ":"}</span>}
             </span>
           ))}
         </div>
 
         {mode === "countdown" ? (
           <div className={styles.durationSetup}>
+            <div className={styles.presets} aria-label="常用时长">
+              <span>常用时长</span>
+              {[15, 25, 45, 60].map((preset) => {
+                const active = duration === preset * 60000 && Number(seconds) === 0 && Number(milliseconds) === 0;
+                return <button type="button" key={preset} className={active ? styles.presetActive : ""} disabled={running} onClick={() => choosePreset(preset)}>{preset} 分钟</button>;
+              })}
+            </div>
             <label className={styles.sliderLabel} htmlFor="duration-slider">
               <span>滑动选时</span>
               <strong>{formatTime(duration, Number(hours) === 0).text}</strong>
@@ -168,7 +189,7 @@ export default function Timer() {
             <p className={styles.precisionHint}>{Number(hours) === 0 ? "分钟模式 · 精确到毫秒" : "小时模式 · 精确到秒"}</p>
           </div>
         ) : (
-          <p className={styles.modeHint}>正计时从 00:00 开始；一小时内显示毫秒，超过一小时显示到秒。</p>
+          <p className={styles.modeHint}>正计时从零开始；一小时内显示毫秒，超过一小时显示到秒。</p>
         )}
 
         <div className={styles.controls}>
@@ -180,20 +201,20 @@ export default function Timer() {
 
       <section className={styles.lapPanel} aria-labelledby="lap-title">
         <div className={styles.lapHeading}>
-          <div><p className={styles.kicker}>TIME MARKS</p><h2 id="lap-title">中间时间</h2></div>
-          <span>{String(laps.length).padStart(2, "0")} 条记录</span>
+          <div><p className={styles.kicker}>TIME MARKS <span>· 阶段记录</span></p><h2 id="lap-title">每一段，都有迹可循</h2></div>
+          <span className={styles.lapCount}>{String(laps.length).padStart(2, "0")} <small>条记录</small></span>
         </div>
         {laps.length ? (
           <ol className={styles.lapList}>
             {laps.map((lap, index) => (
               <li key={lap.id}>
-                <span className={styles.lapIndex}>记录 {String(laps.length - index).padStart(2, "0")}</span>
+                <span className={styles.lapIndex}><i>{String(laps.length - index).padStart(2, "0")}</i><small>时间标记</small></span>
                 <span><small>阶段用时</small><strong>{formatTime(lap.split, mode === "countup" ? lap.split < 3600000 : Number(hours) === 0).text}</strong></span>
                 <span><small>累计用时</small><strong>{formatTime(lap.total, mode === "countup" ? lap.total < 3600000 : Number(hours) === 0).text}</strong></span>
               </li>
             ))}
           </ol>
-        ) : <p className={styles.emptyLaps}>开始计时后，点击“记录中间时间”保存当前阶段。</p>}
+        ) : <div className={styles.emptyLaps}><span className={styles.emptyMark}>＋</span><p>开始计时后，点按“记录中间时间”</p><small>每次记录都会保留阶段用时与累计用时</small></div>}
       </section>
     </section>
   );
